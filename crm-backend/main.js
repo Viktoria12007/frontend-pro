@@ -1,5 +1,19 @@
 "use strict";
 let index = 0;
+        
+function onChoices() {
+const selectElements = document.querySelectorAll('select');
+    
+  selectElements.forEach(element => {
+     if (!element.classList.contains('choices__input')) {
+    const choices = new Choices(element, {
+    searchEnabled: false,
+    position: 'bottom',
+    })
+    element.closest('.choices').setAttribute('aria-label', 'Выбор типа контакта');
+   }
+  })
+}
 
 function reverseStrNew(str) {
     return str.split(".").reverse().join("-");
@@ -149,6 +163,19 @@ function activePreload(event, icon = false) {
   event.target.classList.remove('loaded_hiding');
 }
 
+function passingValues(modalWindow) {
+  const contact = modalWindow.querySelectorAll('.contacts-wrap');
+  const contactsArray = [];
+contact.forEach(element => {
+  const select = element.querySelector('[data-choice = "active"]');
+  const object = {};
+  object.type = select.value;
+  object.value = element.children[1].value;
+  contactsArray.push(object);
+});
+  return contactsArray;
+}
+
 function createTable (array) {
 
     const tbody = document.querySelector('.tableb');
@@ -212,20 +239,20 @@ function createTable (array) {
 
      switch (object.type) {
        
-      case 'Телефон':
+      case 'telephon':
         columnBody4.insertAdjacentHTML('beforeend', '<span class="contacts-tooltip"><svg tabindex="0" class="contacts-icon bcell__contacts-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><use xlink:href="img/svg-sprite.svg#phone"></use></svg><span class="contacts-popup"><a class="contacts-link" href="tel:' + object.value + '">' + object.value + '</a></span></span>');
         break;
-      case 'E-mail':
+      case 'email':
         columnBody4.insertAdjacentHTML('beforeend', '<span class="contacts-tooltip"><svg tabindex="0" class="contacts-icon bcell__contacts-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><use xlink:href="img/svg-sprite.svg#email"></use></svg><span class="contacts-popup"><a class="contacts-link" href="mailto:' + object.value + '">' + object.value + '</a></span></span>');
         break;
-      case 'Facebook':
+      case 'facebook':
         columnBody4.insertAdjacentHTML('beforeend', '<span class="contacts-tooltip"><svg tabindex="0" class="contacts-icon bcell__contacts-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><use xlink:href="img/svg-sprite.svg#fb"></use></svg><span class="contacts-popup" data-tooltip="social"><a class="contacts-link" href="' + object.value + '">' + object.value + '</a></span></span>');
         break;
-      case 'VK':
+      case 'vk':
         columnBody4.insertAdjacentHTML('beforeend', '<span class="contacts-tooltip"><svg tabindex="0" class="contacts-icon bcell__contacts-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><use xlink:href="img/svg-sprite.svg#vk"></use></svg><span class="contacts-popup" data-tooltip="social"><a class="contacts-link" href="' + object.value + '">' + object.value + '</a></span></span>');
         break;
       default:
-          columnBody4.insertAdjacentHTML('beforeend', '<span class="contacts-tooltip"><svg tabindex="0" class="contacts-icon bcell__contacts-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><use xlink:href="img/svg-sprite.svg#otherContact"></use></svg><span class="contacts-popup" data-tooltip="other"><a class="contacts-link" href="#" style="cursor: default">' + '<span class="contacts-type">' + object.type + ': </span>' + '<span class="contacts-value">' + object.value + '</span>' + '</a></span></span>');
+          columnBody4.insertAdjacentHTML('beforeend', '<span class="contacts-tooltip"><svg tabindex="0" class="contacts-icon bcell__contacts-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><use xlink:href="img/svg-sprite.svg#otherContact"></use></svg><span class="contacts-popup" data-tooltip="other"><a class="contacts-link" href="#" style="cursor: default">' + '<span class="contacts-type">Другое: </span>' + '<span class="contacts-value">' + object.value + '</span>' + '</a></span></span>');
         break;
     }
   }
@@ -265,6 +292,7 @@ function createTable (array) {
                                                      inputs[2].value = data.lastName;
                                                      data.contacts.forEach(element => {
                                                         createContactsSelects(changeModalWindow, element);
+                                                        onChoices();
                                                      });
                                                     
                                                     const event = document.createEvent('Event');
@@ -288,15 +316,6 @@ function createTable (array) {
 
                                                                 saveChangeButton.addEventListener('click', async (e) => {e.preventDefault();
                                                                 e.target.classList.add('loaded_showing');
-                                                                const contact = changeModalWindow.querySelectorAll('.contacts-wrap');
-                                                                const contactsArray = [];
-                                                              
-                                                                contact.forEach(element => {
-                                                                  const object = {};
-                                                                  object.type = element.firstChild.value;
-                                                                  object.value = element.children[1].value;
-                                                                  contactsArray.push(object);
-                                                                });
 
                                                               const response = await fetch('http://localhost:3000/api/clients/' + data.id, {
                                                               method: 'PATCH',
@@ -305,7 +324,7 @@ function createTable (array) {
                                                                 name: inputs[1].value,
                                                                 surname: inputs[0].value,
                                                                 lastName: inputs[2].value,
-                                                                contacts: contactsArray,
+                                                                contacts: passingValues(changeModalWindow),
                                                               }),
                                                               
                                                             });
@@ -360,7 +379,8 @@ function createTable (array) {
 
                                                                const deleteClientButton = deleteModalWindow.querySelector('.modal-big-button');
 
-                                                               deleteClientButton.addEventListener('click', async (e) => {e.preventDefault();
+                                                               deleteClientButton.addEventListener('click', async (e) => {
+                                                                e.preventDefault();
                                                                 e.target.classList.add('loaded_showing');
                                                                 await fetch('http://localhost:3000/api/clients/' + array[index].id, {
                                                                    method: 'DELETE',
@@ -439,6 +459,25 @@ function clearContactsGroup(modalWindow) {
    contactsGroupWrap.style.display = 'none';
 }
 
+function chooseTypeInput(value, input) {
+  if (value === 'telephon') {
+    input.setAttribute('type', 'tel');
+    input.setAttribute('pattern', '\\+?[0-9\\s\\-\\(\\)]+');
+  }
+  if (value === 'email') {
+    input.setAttribute('type', 'email');
+    input.removeAttribute('pattern', '\\+?[0-9\\s\\-\\(\\)]+');
+  }
+  if (value === 'facebook' || value === 'vk') {
+    input.setAttribute('type', 'url');
+    input.removeAttribute('pattern', '\\+?[0-9\\s\\-\\(\\)]+');
+  }
+  if (value === 'other') {
+    input.setAttribute('type', 'text');
+    input.removeAttribute('pattern', '\\+?[0-9\\s\\-\\(\\)]+');
+  }
+}
+
 function createContactsSelects(modalWindow, contact = false) {
   const addContactButton = modalWindow.querySelector('.modal-add-button');
   addContactButton.classList.add('contacts-group__modal-add-button');
@@ -448,14 +487,14 @@ function createContactsSelects(modalWindow, contact = false) {
   contactWrap.classList.add('contacts-wrap', 'contacts-group__contacts-wrap');
 
   const contactsList = document.createElement('select');
-  contactsList.classList.add('contacts-list', 'select-wrap__contacts-list');
+  contactsList.name = 'select';
   
-  
-  const contactsType = ['Телефон', 'E-mail', 'Facebook', 'VK', 'Другое'];
+  const contactsText = ['Телефон', 'E-mail', 'Facebook', 'VK', 'Другое'];
+  const contactsValue = ['telephon', 'email', 'facebook', 'vk', 'other'];
   for (let i=0; i <= 4; i++) {
   const contactsItem = document.createElement('option');
-  contactsItem.textContent = contactsType[i];
-  contactsItem.classList.add('contacts-item', 'contacts-list__contacts-item');
+  contactsItem.textContent = contactsText[i];
+  contactsItem.value = contactsValue[i];
   contactsList.append(contactsItem);
   }
 
@@ -466,6 +505,7 @@ function createContactsSelects(modalWindow, contact = false) {
   input.minLength = 4;
   input.maxLength = 40;
   input.type = 'tel';
+  input.setAttribute('pattern', '\\+?[0-9\\s\\-\\(\\)]+');
   
   const deleteContactButton = document.createElement('button');
   deleteContactButton.classList.add('button','modal-delete-button');
@@ -491,24 +531,13 @@ function createContactsSelects(modalWindow, contact = false) {
 
   });
 
-  if (contact !== false) {
+  if (contact) {
     contactsList.value = contact.type;
     input.value = contact.value;
     deleteContactButton.style.display = 'flex';
 
-   if (contactsList.value === 'Телефон') {
-    input.setAttribute('type', 'tel');
-    input.setAttribute('pattern', '\\+?[0-9\\s\\-\\(\\)]+');
-  }
-  if (contactsList.value === 'E-mail') {
-    input.setAttribute('type', 'email');
-  }
-  if (contactsList.value === 'Facebook' || contactsList.value === 'VK') {
-    input.setAttribute('type', 'url');
-  }
-  if (contactsList.value === 'Другое') {
-    input.setAttribute('type', 'text');
-  }
+  chooseTypeInput(contactsList.value, input);
+
   }
 
   deleteContactButton.addEventListener('click', (e) => {
@@ -528,28 +557,13 @@ function createContactsSelects(modalWindow, contact = false) {
   });
 
   contactsList.addEventListener('change', (e) => {
-    const activeInput = e.target.nextSibling;
+    const currentContact = e.target.closest('.contacts-wrap');
+    const activeInput = currentContact.querySelector('.contacts-input');
 
-    if (e.target.value === 'Телефон') {
-      activeInput.setAttribute('type', 'tel');
-      activeInput.setAttribute('pattern', '\\+?[0-9\\s\\-\\(\\)]+');
-    }
-
-    if (e.target.value === 'E-mail') {
-      activeInput.setAttribute('type', 'email');
-    }
-
-    if (e.target.value === 'Facebook' || e.target.value === 'VK') {
-      activeInput.setAttribute('type', 'url');
-    }
-
-    else {
-      activeInput.setAttribute('type', 'text');
-    }
+    chooseTypeInput(e.target.value, activeInput);
 
   });
 
-  checkSelect(contactsList);
  }
 
 function createModalsWindows(active, title, bigActive, smallActive, container) {
@@ -652,11 +666,11 @@ function createModalsWindows(active, title, bigActive, smallActive, container) {
   const addContactButton = document.createElement('button');
   addContactButton.classList.add('button', 'modal-add-button');
   addContactButton.textContent = 'Добавить контакт';
-  addContactButton.innerHTML = '<svg class="modal-icon modal-add-button__modal-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><use xlink:href="img/svg-sprite.svg#addContact1"></use></svg>' + addContactButton.textContent;
+  addContactButton.innerHTML = '<svg class="modal-icon modal-add-button__modal-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><use class="add-contact" xlink:href="img/svg-sprite.svg#addContact"></use><use class="add-contact_hover" xlink:href="img/svg-sprite.svg#addContact_hover"></use></svg>' + addContactButton.textContent;
   addContactButton.setAttribute('type', 'button');
   addContactButton.addEventListener('click', (e) => {e.preventDefault();
                                                      createContactsSelects(modalWindow);
-
+                                                     onChoices();
                                                      if (contactsGroupWrap.children.length === 10) {
                                                        addContactButton.style.display = 'none';
                                                      }
@@ -668,18 +682,10 @@ function createModalsWindows(active, title, bigActive, smallActive, container) {
   containerErrors.classList.add('container-errors', 'modal-form__container-errors');
   
   if (active === 'add') {
-    bigButton.addEventListener('click', async (e) => {e.preventDefault();
+    bigButton.addEventListener('click', async (e) => {
+    e.preventDefault();
     e.target.classList.add('loaded_showing');
     const input = document.querySelectorAll('.modal-input');
-    const contact = modalWindow.querySelectorAll('.contacts-wrap');
-    const contactsArray = [];
-
-  contact.forEach(element => {
-    const object = {};
-    object.type = element.firstChild.value;
-    object.value = element.children[1].value;
-    contactsArray.push(object);
-  });
 
   const response = await fetch('http://localhost:3000/api/clients', {
   method: 'POST',
@@ -688,7 +694,7 @@ function createModalsWindows(active, title, bigActive, smallActive, container) {
     name: input[1].value,
     surname: input[0].value,
     lastName: input[2].value,
-    contacts: contactsArray,
+    contacts: passingValues(modalWindow),
   }),
   
 });
@@ -840,26 +846,6 @@ function createModalsWindows(active, title, bigActive, smallActive, container) {
     
       tableBody.append(...rowsArrayWhithoutFirst);
     }
-
-
-    function checkSelect(select) {
-      
-    select.addEventListener('blur', (event) => selectEvent(event));
-    select.addEventListener('click', (event) => selectEvent(event));
-
-   function selectEvent(event) {
-
-        if (event.type == 'click') {
-            event.target.classList.toggle('contacts-list_active');
-        }
-
-        if (event.type == 'blur') {
-          event.target.classList.remove('contacts-list_active');
-        }
-
-    };
-
-  }
 
 function hidePopup(event) {
   const tooltip = event.target.closest('.contacts-tooltip');

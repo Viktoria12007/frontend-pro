@@ -46,6 +46,8 @@
     --light-color: #ffffff;
     --txt_grey-color: #b0b0b0;
     --grey-color: #c8c5d1;
+    --select_grey-color: #e7e5eb;
+    --list_grey-color: #f4f3f6;
     --firm-color: #9873ff;
     --red-color: #f06a4d;
     --hover-color: #b89eff;
@@ -477,10 +479,15 @@ fieldset {
     background-color: var(--hover-color);
     color: var(--light-color);
 }
-#add {
+path {
+    fill:inherit;
+    stroke:inherit;
+}
+.add-icon > use {
+    fill: var(--firm-color);
     transition: fill .4s ease-in-out;
 }
-.add-button:hover > .add-icon > use * #add > path {
+.add-button:hover * use {
     fill: var(--light-color);
 }
 .add-button:active {
@@ -524,10 +531,17 @@ fieldset {
     flex-direction: column;
     align-items: center;
 }
+.close-icon > use {
+    fill: var(--txt_grey-color);
+    transition: fill .4s ease-in-out;
+}
 .modal-close-button {
     position: absolute;
     top: 15px;
     right: 15px;
+}
+.modal-close-button:hover * use {
+    fill: var(--firm-color);
 }
 .modal-close-button:focus {
    outline: 1px solid var(--firm-color);
@@ -685,40 +699,86 @@ input + label {
 .contacts-group__contacts-wrap:not(:last-child) {
     margin-bottom: 15px;
 }
-.contacts-list {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    -ms-appearance: none;
-    appearance: none;
-    background: url('../img/arrow-down.png') no-repeat 90% center;
-    outline: 0;
-    min-width: 123px;
-    padding: 10px 12px;
-    cursor: pointer;
-    background-color: #e7e5eb;
-    border: 1px solid var(--grey-color);
+.choices {
+    width: 123px !important;
+    margin-bottom: 0px;
 }
-.contacts-list_active {
-    background-color: #e7e5eb;
-    background: url('../img/arrow-up.png') no-repeat 90% center;
+.choices__inner {
+    width: 123px !important;
+    font-size: 12px;
+    min-height: 0px;
+    padding-top: 10px;
+    padding-bottom: 10px !important;
+    padding-left: 12px;
+    padding-right: 15.5px;
+    border: 1px solid var(--grey-color)!important;
+    background-color: var(--select_grey-color);
 }
-.contacts-list:hover {
-    color: var(--dark-color);
-    background-color: #e7e5eb;
+.choices__inner,
+.is-open {
+    border-radius: 0px !important;
 }
-.contacts-list:hover > .contacts-item {
-    background-color: #e7e5eb;
+.choices::after,
+.choices__inner {
+    position: relative;
+    z-index: 500;
 }
-.contacts-list:focus {
-    background-color: #e7e5eb;
-    outline-offset: -1px;
-    outline: 1px solid var(--firm-color);
+.choices::after {
+    height: 9px !important;
+    width: 9px !important;
+    right: 20px !important;
+    top: 35% !important;
+    margin-top: 0px !important;
+    border: solid var(--firm-color) !important;
+    border-width: 0 1px 1px 0 !important;
+    transform: rotate(45deg);
+}
+.choices.is-open::after {
+    margin-top: 4px !important;
+    transform: rotate(-135deg);
+} 
+.choices__item {
+    font-size: 12px !important;
+    padding: 9px 12px !important;
+    background-color: var(--list_grey-color);
+    word-break: normal;
+}
+.choices__item.is-selected {
+    display: none;
+}
+.choices__item--selectable[aria-selected="true"] {
+    background-color: var(--select_grey-color);
+}
+.choices__item--selectable::after {
+    display: none;
+}
+.choices__list--single {
+    padding: 0px 0px;
+    padding-right: 46px;
+}
+.choices__list--single > .choices__item {
+    padding: 0px 0px !important;
+}
+.choices__list--dropdown {
+    display: none;
+    visibility: visible;
+    z-index: 600;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+    border: 1px solid var(--grey-color) !important;
+    background-color: var(--list_grey-color) !important;
+}
+.choices__list--dropdown.is-active {
+    display: block;
+}
+.is-highlighted {
+    background-color: var(--select_grey-color) !important;
 }
 .contacts-input {
     width: 267px;
     position: relative;
     z-index: 5;
-    padding: 9px 12px;
+    padding: 7px 12px;
     background-color: transparent;
     border: 1px solid var(--grey-color);
 }
@@ -727,6 +787,10 @@ input + label {
 }
 .contacts-input:focus {
     outline: 1px solid var(--firm-color);
+}
+.contact-delete-icon > use {
+    fill: var(--txt_grey-color);
+    transition: fill .4s ease-in-out;
 }
 .modal-delete-button {
     display: none;
@@ -746,6 +810,9 @@ input + label {
 }
 .modal-delete-button:hover {
     border-color: var(--red-color);
+}
+.modal-delete-button:hover * use {
+    fill: var(--red-color);
 }
 .modal-delete-button:hover + .contacts-popup {
     opacity: 1;
@@ -769,6 +836,22 @@ input + label {
 .modal-add-button__modal-icon {
     margin-right: 4px;
 }
+.modal-icon > use.add-contact {
+    fill: var(--firm-color);
+    opacity: 1;
+    transition: opacity .4s ease-in-out;
+}
+.modal-icon > use.add-contact_hover {
+    fill: var(--firm-color);
+    opacity: 0;
+    transition: opacity .4s ease-in-out;
+}
+.modal-add-button:hover * use.add-contact {
+    opacity: 0;
+ }
+ .modal-add-button:hover * use.add-contact_hover {
+    opacity: 1;
+ }
 .modal-add-button:hover {
    color: var(--firm-color);
 }
