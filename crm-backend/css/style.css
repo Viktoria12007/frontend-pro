@@ -500,10 +500,10 @@ path {
 .overlay {
     display: none;
     position: fixed;
+    width: 100%;
+    height: 100%;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
     z-index: 40;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
@@ -516,20 +516,25 @@ path {
     display: none;
     position: fixed;
     z-index: 50;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     background-color: var(--light-color);
     box-shadow: 0px 0px 35px 0px rgba(0, 0, 0, 0.15);
 }
-.container__modal-add-window {
-    top: 10%;
-    left: 37%;
+.modal-window_form {
+    width: 450px;
+    max-width: 100%;
+    height: 400px;
+    max-height: 100%;
 }
-.container__modal-delete-window {
-    top: 25%;
-    left: 41%;
-}
-.center {
+.modal-window_center {
+    width: 450px;
+    max-width: 100%;
     flex-direction: column;
     align-items: center;
+    padding-top: 22px;
+    padding-bottom: 27px;
 }
 .close-icon > use {
     fill: var(--txt_grey-color);
@@ -537,6 +542,7 @@ path {
 }
 .modal-close-button {
     position: absolute;
+    z-index: 350;
     top: 15px;
     right: 15px;
 }
@@ -547,13 +553,13 @@ path {
    outline: 1px solid var(--firm-color);
 }
 .modal-title {
+    font-weight: 700;
     font-size: 18px;
     line-height: 24.5px;
     padding-left: 30px;
     padding-right: 30px;
 }
 .modal-window__modal-title {
-    margin-top: 24px;
     margin-bottom: 32px;
 }
 .modal-subtitle {
@@ -563,6 +569,15 @@ path {
 }
 .modal-title__modal-subtitle {
     margin-left: 9px;
+}
+.modal-scroll-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  padding: 24px 0px 29px 0px;
+  overflow: auto;
 }
 .modal-form {
     display: flex;
@@ -681,9 +696,7 @@ input + label {
 }
 .contacts-group-wrap {
     display: none;
-    overflow-y: auto;
-    max-height: 95px;
-   padding-left: 30px;
+    padding-left: 30px;
     padding-right: 30px;
     padding-top: 1px;
     padding-bottom: 1px;
@@ -714,6 +727,9 @@ input + label {
     border: 1px solid var(--grey-color)!important;
     background-color: var(--select_grey-color);
 }
+.choices:focus > .choices__inner {
+    border-color: var(--firm-color) !important;
+}
 .choices__inner,
 .is-open {
     border-radius: 0px !important;
@@ -721,7 +737,7 @@ input + label {
 .choices::after,
 .choices__inner {
     position: relative;
-    z-index: 500;
+    z-index: 200;
 }
 .choices::after {
     height: 9px !important;
@@ -760,16 +776,14 @@ input + label {
     padding: 0px 0px !important;
 }
 .choices__list--dropdown {
-    display: none;
-    visibility: visible;
-    z-index: 600;
+    z-index: 300;
     border-bottom-left-radius: 0px;
     border-bottom-right-radius: 0px;
     border: 1px solid var(--grey-color) !important;
     background-color: var(--list_grey-color) !important;
 }
 .choices__list--dropdown.is-active {
-    display: block;
+    border-top-color: var(--firm-color)!important;
 }
 .is-highlighted {
     background-color: var(--select_grey-color) !important;
@@ -786,7 +800,8 @@ input + label {
     color: var(--txt_grey-color);
 }
 .contacts-input:focus {
-    outline: 1px solid var(--firm-color);
+    outline: none;
+    border-color: var(--firm-color);
 }
 .contact-delete-icon > use {
     fill: var(--txt_grey-color);
@@ -804,9 +819,9 @@ input + label {
     top: -55px;
     left: 335px;
 }
-.contacts-wrap:first-child > .contacts-popup {
-    top: -5px;
-    left: 220px;
+.contacts-wrap > .contacts-popup {
+    top: -55px;
+    left: 330px;
 }
 .modal-delete-button:hover {
     border-color: var(--red-color);
@@ -865,7 +880,7 @@ input + label {
     margin-bottom: 17px;
 }
 .container-errors {
-    height: 8px;
+    min-height: 8px;
     font-size: 10px;
     line-height: 13.6px;
     text-align: center;
@@ -905,9 +920,6 @@ input + label {
 }
 .modal-small-button:focus {
     outline: 1px solid var(--firm-color);
-}
-.modal-form__modal-small-button {
-    margin-bottom: 25px;
 }
 .modal-text {
     width: 275px;

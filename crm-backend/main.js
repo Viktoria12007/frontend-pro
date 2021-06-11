@@ -19,6 +19,38 @@ function reverseStrNew(str) {
     return str.split(".").reverse().join("-");
 }
 
+async function reloadTable(action = 'reload') {
+  let dataTable;
+  const tbody = document.querySelector('tbody');
+  
+  while(tbody.rows.length > 1){
+    tbody.deleteRow(1);
+  }
+
+  const bigPreloadRow = tbody.rows[0];
+  bigPreloadRow.classList.remove('loaded');
+
+  if (action === 'search') {
+  const input = document.querySelector('.search');
+  const responseTable = await fetch('http://localhost:3000/api/clients/?search=' + input.value);
+  dataTable = await responseTable.json();
+  input.value = '';
+  }
+
+  if (action === 'reload') {
+    const responseTable = await fetch('http://localhost:3000/api/clients');
+    dataTable = await responseTable.json();
+    }
+ 
+    bigPreloadRow.classList.add('loaded_hiding');
+    window.setTimeout(function () {
+      bigPreloadRow.classList.add('loaded');
+      bigPreloadRow.classList.remove('loaded_hiding'); 
+      createTable(dataTable);
+    }, 500);
+  
+}
+
 function createHeader() {
     const header = document.createElement('header');
     header.classList.add('header');
@@ -38,35 +70,10 @@ function createHeader() {
 
     let timerId;
 
-    async function searchRequest() {
-      const tbody = document.querySelector('tbody');
-      
-      while(tbody.rows.length > 1){
-        tbody.deleteRow(1);
-      }
-  
-      const bigPreloadRow = tbody.rows[0];
-      bigPreloadRow.classList.remove('loaded');
-
-      const response = await fetch('http://localhost:3000/api/clients/?search=' + input.value);
-      const data = await response.json();
-      input.value = '';
-      
-     
-        bigPreloadRow.classList.add('loaded_hiding');
-        window.setTimeout(function () {
-          bigPreloadRow.classList.add('loaded');
-          bigPreloadRow.classList.remove('loaded_hiding');
-          createTable(data);
-          
-        }, 500);
-      
-    }
-
     function createTimeOut() {
       clearTimeout(timerId);
   
-      timerId = setTimeout(searchRequest, 500);
+      timerId = setTimeout(reloadTable, 500, 'search');
   }
   
   input.addEventListener('input', createTimeOut);
@@ -284,7 +291,7 @@ function createTable (array) {
                                                             });
 
                                                      clearContactsGroup(changeModalWindow);
-                                                     containerErrors.textContent = '';
+                                                     containerErrors.innerHTML = '';
 
                                                      idRow.textContent = 'ID: ' + data.id;
                                                      inputs[0].value = data.surname;
@@ -306,18 +313,22 @@ function createTable (array) {
                                                      changeModalWindow.style.display = 'block';
 
                                                      const deleteClientButton = changeModalWindow.querySelector('.modal-small-button');
-                                                               deleteClientButton.addEventListener('click', async (e) => {e.preventDefault();
+                                                               deleteClientButton.addEventListener('click', async (e) => {
+                                                                   e.preventDefault();
                                                                    await fetch('http://localhost:3000/api/clients/' + data.id, {
                                                                    method: 'DELETE',
                                                               });
+                                                              closeModalWindow();
+                                                              reloadTable();
                                                             });
 
                                                               const saveChangeButton = changeModalWindow.querySelector('.modal-big-button');
 
-                                                                saveChangeButton.addEventListener('click', async (e) => {e.preventDefault();
+                                                                saveChangeButton.addEventListener('click', async (e) => {
+                                                                e.preventDefault();
                                                                 e.target.classList.add('loaded_showing');
 
-                                                              const response = await fetch('http://localhost:3000/api/clients/' + data.id, {
+                                                              const responseChange = await fetch('http://localhost:3000/api/clients/' + data.id, {
                                                               method: 'PATCH',
                                                               headers: {'Content-Type': 'application/json'},
                                                               body: JSON.stringify({
@@ -328,31 +339,8 @@ function createTable (array) {
                                                               }),
                                                               
                                                             });
-                                                            const dataChange = await response.json();
-
-                                                            if ('errors' in dataChange) {
-                                                              const errorsMessages = [];
-                                                                for(let key in dataChange.errors) {
-                                                                
-                                                                  for(let key1 in dataChange.errors[key]) {
-
-                                                                    if (key1 === 'message') {
-                                                                    errorsMessages.push(dataChange.errors[key][key1]);
-                                                                    }
-
-                                                                  }
-
-                                                                }
-                                                                
-                                                                containerErrors.textContent = errorsMessages.join('! ') + '!';
-
-                                                              if ('errors' === undefined) {
-                                                                containerErrors.textContent = 'Что-то пошло не так...';
-                                                              }
-
-                                                            }
-
-                                                            window.setTimeout(activePreload, 500, e);
+                                                            const dataChange = await responseChange.json();
+                                                            errorsOutput(dataChange, containerErrors, e);
                                                               
                                                           });
                                                          
@@ -387,6 +375,8 @@ function createTable (array) {
                                                               });
 
                                                               window.setTimeout(activePreload, 500, e);
+                                                              window.setTimeout(closeModalWindow, 500);
+                                                              reloadTable();
                                                             });
                                                             
                                                            
@@ -430,7 +420,7 @@ function createAddButton() {
                                                 element.classList.remove('modal-input_active', 'modal-input_invalid')
                                               });
                                               clearContactsGroup(addModalWindow);
-                                              containerErrors.textContent = '';
+                                              containerErrors.innerHTML = '';
                                               overlay.style.display = 'block', 
                                             addModalWindow.style.display = 'block'});
   return addButton;
@@ -439,6 +429,10 @@ function createAddButton() {
 function createOverlay(container) {
   const overlay = document.createElement('div');
   overlay.classList.add('overlay');
+  overlay.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeModalWindow();
+  })
   container.append(overlay);
   return overlay;
 }
@@ -566,16 +560,63 @@ function createContactsSelects(modalWindow, contact = false) {
 
  }
 
-function createModalsWindows(active, title, bigActive, smallActive, container) {
+function closeModalWindow() {
+  const overlay = document.querySelector('.overlay');
+  const modalWindow = document.querySelectorAll('.modal-window');
+  overlay.style.display = 'none';
+  modalWindow.forEach(element => {
+    element.style.display = 'none';
+  })
+}
 
+async function errorsOutput (data, containerErrors, event) {
+  // const data = await response.json();
+
+  window.setTimeout(activePreload, 500, event);
+  
+  if ('errors' in data) {
+    const errorsMessages = [];
+      for(let key in data.errors) {
+        
+        for(let key1 in data.errors[key]) {
+
+          if (key1 === 'message') {
+          errorsMessages.push(data.errors[key][key1]);
+          }
+
+        }
+
+      }
+
+      containerErrors.innerHTML = errorsMessages.join('!<br>') + '!';
+
+    if ('errors' === undefined) {
+      containerErrors.innerHTML = 'Что-то пошло не так...';
+    }
+    return;
+  }
+  
+  window.setTimeout(closeModalWindow, 500);
+  reloadTable();
+}
+
+function createModalsWindows(active, title, bigActive, smallActive, container) {
+  
   const modalWindow = document.createElement('div');
   modalWindow.setAttribute('data-modal', active);
+
   const closeButton = document.createElement('button');
   closeButton.classList.add('button', 'modal-close-button', 'modal-window__modal-close-button');
   closeButton.innerHTML = '<svg class="close-icon modal-close-button__close-icon" width="29" height="29" viewBox="0 0 29 29" fill="none" xmlns="http://www.w3.org/2000/svg"><use xlink:href="img/svg-sprite.svg#close"></use></svg>';
+  closeButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeModalWindow();
+  })
+
   const h2 = document.createElement('h2');
   h2.classList.add('title', 'modal-title', 'modal-window__modal-title');
   h2.textContent = title;
+  
   const bigButton = document.createElement('button');
   bigButton.classList.add('button', 'modal-form__modal-big-button', 'modal-big-button');
   bigButton.innerHTML = '<div class="action-button-preload modal-big-button__action-button-preload"><svg class="action-button-preload__icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><use xlink:href="img/svg-sprite.svg#smallPreloadSave"></use></svg></div>' + bigActive;
@@ -583,10 +624,11 @@ function createModalsWindows(active, title, bigActive, smallActive, container) {
   smallButton.classList.add('button', 'modal-form__modal-small-button', 'modal-small-button');
   smallButton.textContent = smallActive;
   smallButton.setAttribute('type', 'button');
+  
 
   if (active === 'add' || active === 'change') {
 
-  modalWindow.classList.add('modal-window', 'container__modal-add-window');
+  modalWindow.classList.add('modal-window', 'modal-window_form');
 
     if (active === 'change') {
       const idSpan = document.createElement('span');
@@ -594,10 +636,14 @@ function createModalsWindows(active, title, bigActive, smallActive, container) {
       h2.append(idSpan);
     }
 
+  const modalScrollWrap = document.createElement('div');
+  modalScrollWrap.classList.add('modal-scroll-wrap', 'modal-window__modal-scroll-wrap');
+
   const form = document.createElement('form');
   form.classList.add('modal-form');
   const inputs = document.createElement('fieldset');
   inputs.classList.add('inputs-group', 'modal-form__inputs-group');
+
   for (let i = 1; i <= 3; i++) {
   const label = document.createElement('label');
   label.classList.add('container_color_grey');
@@ -699,44 +745,29 @@ function createModalsWindows(active, title, bigActive, smallActive, container) {
   
 });
   const data = await response.json();
-  
-  if ('errors' in data) {
-    const errorsMessages = [];
-      for(let key in data.errors) {
-        
-        for(let key1 in data.errors[key]) {
-
-          if (key1 === 'message') {
-          errorsMessages.push(data.errors[key][key1]);
-          }
-
-        }
-
-      }
-
-      containerErrors.textContent = errorsMessages.join('! ') + '!';
-
-    if ('errors' === undefined) {
-      containerErrors.textContent = 'Что-то пошло не так...';
-    }
-
-  }
-
-  window.setTimeout(activePreload, 500, e);
+  errorsOutput(data, containerErrors, e);
 
 });
   }
   
   form.append(inputs, contacts, containerErrors, bigButton, smallButton);
-  modalWindow.append(closeButton, h2, form);
+  modalScrollWrap.append(h2, form);
+  modalWindow.append(closeButton, modalScrollWrap);
   }
 
   if (active === 'delete') {
-    modalWindow.classList.add('modal-window', 'center', 'container__modal-delete-window'); 
+    modalWindow.classList.add('modal-window', 'modal-window_center'); 
     const text = document.createElement('p');
     text.classList.add('text', 'modal-text', 'modal-window__modal-text');
     text.textContent = 'Вы действительно хотите удалить данного клиента?';
     modalWindow.append(closeButton, h2, text, bigButton, smallButton);
+  }
+
+  if (active === 'add' || active === 'delete') {
+    smallButton.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeModalWindow();
+    })
   }
 
   container.append(modalWindow);
@@ -801,10 +832,9 @@ function createModalsWindows(active, title, bigActive, smallActive, container) {
           break;
 
           case 'date':
-            if(activeCell.dataset.order === 'true' || activeCell.hasAttribute('data-order') === false) {
-              activeCell.dataset.order = false;
-
-          compare = function(rowA, rowB) {
+          
+          function compareDate(order) {
+          compare =  function(rowA, rowB) {
             
           const rowDateA = reverseStrNew(rowA.cells[colNum].textContent.slice(0, 10));
           const rowDateB = reverseStrNew(rowB.cells[colNum].textContent.slice(0, 10));
@@ -812,29 +842,24 @@ function createModalsWindows(active, title, bigActive, smallActive, container) {
           const rowFullDateA = rowDateA + 'T' + rowA.cells[colNum].textContent.slice(10,15);
           const rowFullDateB = rowDateB + 'T' + rowB.cells[colNum].textContent.slice(10,15);
     
-            let dateA = new Date(rowFullDateA); 
-            let dateB = new Date(rowFullDateB); 
-            
-            return dateA - dateB;
-          };
-        }
-        else {
-          activeCell.dataset.order = true;
+            const dateA = new Date(rowFullDateA); 
+            const dateB = new Date(rowFullDateB);
 
-          compare = function(rowA, rowB) {
-            
-            const rowDateA = reverseStrNew(rowA.cells[colNum].textContent.slice(0, 10));
-            const rowDateB = reverseStrNew(rowB.cells[colNum].textContent.slice(0, 10));
-  
-            const rowFullDateA = rowDateA + 'T' + rowA.cells[colNum].textContent.slice(10,15);
-            const rowFullDateB = rowDateB + 'T' + rowB.cells[colNum].textContent.slice(10,15);
-      
-              let dateA = new Date(rowFullDateA); 
-              let dateB = new Date(rowFullDateB); 
-              
-              return dateB - dateA;
-            };
+            if (!order)  return dateA - dateB; 
+            else return dateB - dateA;
+          
+          }
         }
+            
+            if(activeCell.dataset.order === 'true' || activeCell.hasAttribute('data-order') === false) {
+              activeCell.dataset.order = false;
+              compareDate(false);
+          }
+          else {
+            activeCell.dataset.order = true;
+            compareDate(true);
+        }
+        
           break;
 
           default:
@@ -861,22 +886,11 @@ function hidePopup(event) {
   
 }
 
-async function createControlSystemApp(container) {
+function createControlSystemApp(container) {
     const headerPage = createHeader(); 
     const titlePage = createTitle();
     const wrapForTable = createWrapForTable();
     const basicTable = createBasicTable();
-
-    window.onload = function () {
-      basicTable.bigPreloadRow.classList.add('loaded_hiding');
-
-      window.setTimeout(function () {
-        basicTable.bigPreloadRow.classList.add('loaded');
-        basicTable.bigPreloadRow.classList.remove('loaded_hiding');
-        createTable(data);
-      }, 500);
-    
-    }
     
     const overlay = createOverlay(container);    
     const addModalWindow = createModalsWindows('add', 'Новый клиент', 'Сохранить', 'Отмена', container);
@@ -887,9 +901,8 @@ async function createControlSystemApp(container) {
     document.body.prepend(headerPage);
     wrapForTable.append(basicTable.table);
     container.append(titlePage, wrapForTable, addButton);
-      
-  const response = await fetch('http://localhost:3000/api/clients');
-  const data = await response.json();
+    
+    reloadTable();
     
     const idCell = document.querySelector('th[data-type=number]');
     idCell.setAttribute('data-order', true);
@@ -903,19 +916,5 @@ async function createControlSystemApp(container) {
     
       sortGrid(th, th.cellIndex, th.dataset.type, basicTable.tableBody.rows, basicTable.rowHead.cells);
     };
-
-    function closeModalWindow() {
-      overlay.style.display = 'none';
-      addModalWindow.style.display = 'none';
-      changeModalWindow.style.display = 'none';
-      deleteModalWindow.style.display = 'none';
-    }
-     
-     const closeButtons = document.querySelectorAll('.modal-close-button, .overlay, [data-modal=add] * .modal-small-button, [data-modal=delete] > .modal-small-button');
-     closeButtons.forEach(element => {
-       element.addEventListener('click', () => {
-          closeModalWindow();
-       });
-     })
     
 }
