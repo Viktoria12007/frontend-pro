@@ -1,3 +1,4 @@
 db.json
 node_modules
-../Server/db.json
+Server/db.json
+.idea
